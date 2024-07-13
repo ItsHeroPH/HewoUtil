@@ -12,8 +12,9 @@
   <name>HewoUtil</name>
 
   <properties>
-    <java.version>1.8</java.version>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+      <maven.compiler.target>21</maven.compiler.target>
+      <maven.compiler.source>21</maven.compiler.source>
+      <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
 
   <build>
