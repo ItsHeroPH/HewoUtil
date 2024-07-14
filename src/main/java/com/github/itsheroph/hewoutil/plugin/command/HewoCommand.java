@@ -19,7 +19,7 @@ public abstract class HewoCommand {
 
     public abstract List<String> getAliases();
 
-    public abstract List<String> getOptions(String[] arguments);
+    public abstract List<String> getOptions(CommandSender sender, String[] arguments);
 
     public abstract String getPermission();
 
