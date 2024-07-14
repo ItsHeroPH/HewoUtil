@@ -128,7 +128,7 @@ public class HewoCMDHandler implements CommandExecutor, TabExecutor {
 
                 HewoCommand hewoCommand = this.getCommand(cmdName);
 
-                return hewoCommand.getOptions(arguments);
+                return hewoCommand.getOptions(commandSender, arguments);
 
             }
 
