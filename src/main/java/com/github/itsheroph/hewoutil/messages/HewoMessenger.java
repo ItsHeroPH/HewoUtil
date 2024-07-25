@@ -5,18 +5,19 @@ import com.github.itsheroph.hewoutil.plugin.HewoPlugin;
 import org.bukkit.entity.Player;
 
 import java.util.List;
+import java.util.Map;
 
-public class HewoMessenger extends HewoMessengerAbstract{
+public class HewoMessenger extends HewoMessengerAbstract {
 
-    public HewoMessenger(HewoPlugin plugin, HewoLogger logger) {
+    public HewoMessenger(HewoPlugin plugin, HewoLogger logger, Map<String, String> messages) {
 
-        super(plugin, logger);
+        super(plugin, logger, messages);
 
     }
 
-    public HewoMessenger(HewoPlugin plugin, HewoLogger logger, String prefix) {
+    public HewoMessenger(HewoPlugin plugin, HewoLogger logger, String prefix, Map<String, String> messages) {
 
-        super(plugin, logger, prefix);
+        super(plugin, logger, prefix, messages);
 
     }
 

@@ -7,18 +7,19 @@ import com.github.itsheroph.hewoutil.plugin.HewoPlugin;
 import org.bukkit.command.CommandSender;
 
 import java.util.List;
+import java.util.Map;
 
 public class HewoCMDMessenger extends HewoMessengerAbstract {
 
-    public HewoCMDMessenger(HewoPlugin plugin, HewoLogger logger) {
+    public HewoCMDMessenger(HewoPlugin plugin, HewoLogger logger, Map<String, String> messages) {
 
-        super(plugin, logger);
+        super(plugin, logger, messages);
 
     }
 
-    public HewoCMDMessenger(HewoPlugin plugin, HewoLogger logger, String prefix) {
+    public HewoCMDMessenger(HewoPlugin plugin, HewoLogger logger, String prefix, Map<String, String> messages) {
 
-        super(plugin, logger, prefix);
+        super(plugin, logger, prefix, messages);
 
     }
 

@@ -1,23 +1,21 @@
 package com.github.itsheroph.hewoutil.configuration;
 
+import com.github.itsheroph.hewoutil.configuration.yaml.HewoYamlReader;
 import com.github.itsheroph.hewoutil.plugin.HewoPlugin;
-import com.google.common.base.Charsets;
-import com.google.common.io.ByteStreams;
-import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.plugin.PluginAwareness;
 
-import java.io.*;
-import java.net.URL;
-import java.net.URLConnection;
-import java.nio.charset.Charset;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
+import java.util.Map;
+import java.util.Map.Entry;
 
 public class HewoConfig {
 
     private final HewoPlugin plugin;
     private final String resource;
-    private final String path;
     private final File file;
     private YamlConfiguration config = null;
 
@@ -29,11 +27,15 @@ public class HewoConfig {
 
     public HewoConfig(HewoPlugin plugin, String resource, String path) {
 
+        this(plugin, resource, new File(path));
+
+    }
+
+    public HewoConfig(HewoPlugin plugin, String resource, File file) {
+
         this.plugin = plugin;
         this.resource = resource;
-        this.path = path;
-
-        this.file = new File(plugin.getDataFolder(), path);
+        this.file = file;
 
     }
 
@@ -53,164 +55,107 @@ public class HewoConfig {
 
         if(this.config == null) {
 
-            this.reloadConfig();
+            try {
+
+                this.reloadConfig();
+
+            } catch (IOException e) {
+
+                this.getPlugin().getPluginLogger().error(e.getMessage());
+
+            }
 
         }
 
         return this.config;
 
-    };
-
-    public void saveDefaultConfig() {
-
-        if(!this.getFile().exists()) {
-
-            this.saveResource();
-
-        }
-
-    }
-
-    public void reloadConfig() {
-
-        this.config = YamlConfiguration.loadConfiguration(this.getFile());
-        InputStream defaultConfigStream = this.getResource();
-
-        if(defaultConfigStream == null) return;
-
-        YamlConfiguration defConfig;
-
-        if(this.getPlugin().getDescription().getAwareness().contains(PluginAwareness.Flags.UTF8)) {
-
-            defConfig = YamlConfiguration.loadConfiguration(new InputStreamReader(defaultConfigStream, Charsets.UTF_8));
-
-        } else {
-
-            byte[] contents;
-            defConfig = new YamlConfiguration();
-
-            try {
-
-                contents = ByteStreams.toByteArray(defaultConfigStream);
-
-            } catch(IOException error) {
-
-                this.getPlugin().getPluginLogger().error("Unexpected failure reading " + this.getFile().getName(), error.getMessage());
-                return;
-
-            }
-
-            final String text = new String(contents, Charset.defaultCharset());
-
-            if(!text.equals(new String(contents, Charsets.UTF_8))) {
-
-                this.getPlugin().getPluginLogger().warning("Default system encoding may have misread " + this.getFile().getName() + " from the plugin " + this.getPlugin().getName());
-
-            }
-
-            try {
-
-                defConfig.loadFromString(text);
-
-            } catch(InvalidConfigurationException error) {
-
-                this.getPlugin().getPluginLogger().warning("Cannot load configuration from " + this.getPlugin().getName() + ".jar");
-
-            }
-        }
-
-        this.config.setDefaults(defConfig);
-
     }
 
     public void saveConfig() {
 
+        String data = this.getConfig().saveToString();
         try {
 
-            this.getConfig().save(this.getFile());
-
-        } catch (IOException e) {
-
-            this.getPlugin().getPluginLogger().warning(e.getMessage());
-
-        }
-
-    }
-
-    public InputStream getResource() {
-
-        URL url = this.getClass().getClassLoader().getResource(this.resource);
-
-        try {
-
-            if(url == null) {
-
-                return null;
-
-            } else {
-
-                URLConnection connection = url.openConnection();
-                connection.setUseCaches(false);
-
-                return connection.getInputStream();
-
-            }
-
-        } catch (IOException e) {
-
-            return null;
-
-        }
-    }
-
-    private void saveResource() {
-
-        InputStream input = this.getResource();
-
-        if(input == null) {
-
-            this.getPlugin().getPluginLogger().error("The embeded resource " + this.resource + " cannot found in " + this.getPlugin().getName() + ".jar");
-
-        } else {
-
-            File outFile = new File(this.getPlugin().getDataFolder(), this.path);
-            File outDir = new File(outFile.getParent());
-
-            if(!outDir.exists()) {
-
-                outDir.mkdirs();
-
-            }
+            BufferedWriter writer = Files.newBufferedWriter(this.getFile().toPath());
 
             try {
 
-                if(outFile.exists()) {
+                writer.write(data);
 
-                    this.getPlugin().getPluginLogger().warning("Could not save the " + outFile.getName() + " to " + outFile.toString() + " because it is already exists");
+            } finally {
 
-                } else {
+                writer.close();
 
-                    OutputStream output = Files.newOutputStream(outFile.toPath());
-                    byte[] buffer = new byte[1024];
+            }
 
-                    int len;
 
-                    while((len = input.read(buffer)) > 0) {
+        } catch (IOException e) {
 
-                        output.write(buffer, 0, len);
+            this.getPlugin().getPluginLogger().error(e.getMessage());
+
+        }
+
+    }
+
+    public void reloadConfig() throws IOException {
+
+        if(!this.getFile().exists()) {
+
+            HewoResource.saveResource(this.resource, this.getFile().getPath(), this.getPlugin().getPluginLogger());
+
+        } else {
+
+            InputStream defaultConfigStream = HewoResource.getResource(this.resource, this.getPlugin().getPluginLogger());
+            int differences = this.getDifferences(defaultConfigStream);
+
+            if(differences > 0) {
+
+                this.getPlugin().getPluginLogger().warning("We found " + differences + " missing option to your " + this.getFile().getName() + ". Reformatting the file...");
+
+                YamlConfiguration currentConfig = YamlConfiguration.loadConfiguration(this.getFile());
+
+                this.getFile().delete();
+                HewoResource.saveResource(this.resource, this.getFile().getPath(), this.getPlugin().getPluginLogger());
+
+                YamlConfiguration newConfig = YamlConfiguration.loadConfiguration(this.getFile());
+
+                for(String path : currentConfig.getKeys(true)) {
+
+                    if(newConfig.contains(path)) {
+
+                        newConfig.set(path, currentConfig.get(path));
 
                     }
 
-                    output.close();
-                    input.close();
-
                 }
 
-            } catch (IOException e) {
-
-               this.getPlugin().getPluginLogger().error("Could not save the " + outFile.getName() + " to " + outFile.toString());
+                newConfig.save(this.getFile());
 
             }
+
         }
+
+        this.config = YamlConfiguration.loadConfiguration(this.getFile());
+
+    }
+
+    private int getDifferences(InputStream defaultConfigStream) throws IOException {
+
+        Map<String, Object> defaultContent = new HewoYamlReader(defaultConfigStream).getContents();
+        Map<String, Object> currentContent = new HewoYamlReader(this.getFile()).getContents();
+
+        int differences = 0;
+
+        for(Entry<String, Object> entry : defaultContent.entrySet()) {
+
+            if(!currentContent.containsKey(entry.getKey())) {
+
+                differences = differences + 1;
+
+            }
+
+        }
+        return differences;
+
     }
 }

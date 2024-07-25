@@ -1,13 +1,10 @@
 package com.github.itsheroph.hewoutil.messages;
 
-import com.github.itsheroph.hewoutil.configuration.HewoConfig;
 import com.github.itsheroph.hewoutil.messages.logging.HewoLogger;
 import com.github.itsheroph.hewoutil.plugin.HewoPlugin;
 
 import javax.annotation.Nullable;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Map.Entry;
 
 public abstract class HewoMessengerAbstract {
 
@@ -15,26 +12,18 @@ public abstract class HewoMessengerAbstract {
     private final HewoLogger logger;
     private final String prefix;
 
-    public HewoMessengerAbstract(HewoPlugin plugin, HewoLogger logger) {
+    public HewoMessengerAbstract(HewoPlugin plugin, HewoLogger logger, Map<String, String> messages) {
 
-        this(plugin, logger, "HewoPlugin");
+        this(plugin, logger, "HewoPlugin", messages);
 
     }
 
-    public HewoMessengerAbstract(HewoPlugin plugin, HewoLogger logger, String prefix) {
+    public HewoMessengerAbstract(HewoPlugin plugin, HewoLogger logger, String prefix, Map<String, String> messages) {
 
-        this.messages = new HashMap<>();
+        this.messages = messages;
         this.logger = logger;
         this.prefix = prefix;
-        HewoConfig lang = new HewoConfig(plugin, "lang.yml");
-        lang.getConfig().options().copyDefaults(true);
-        lang.saveDefaultConfig();
 
-        for(Entry<String, Object> key : lang.getConfig().getValues(false).entrySet()) {
-
-            this.getMessages().put(key.getKey(), (String) key.getValue());
-
-        }
 
     }
 
