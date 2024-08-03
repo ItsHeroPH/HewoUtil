@@ -16,7 +16,7 @@ public class HewoSubCMDHandler implements CommandExecutor, TabExecutor {
     private final HewoCMDMessenger messenger;
     private final Map<String, HewoSubCommand> commandMap = new HashMap<>();
 
-    protected HewoSubCMDHandler(HewoCMDMessenger messenger, String commandName,  HewoSubCommand... commands) {
+    public HewoSubCMDHandler(HewoCMDMessenger messenger, String commandName,  HewoSubCommand... commands) {
 
         this.name = commandName;
         this.messenger = messenger;
