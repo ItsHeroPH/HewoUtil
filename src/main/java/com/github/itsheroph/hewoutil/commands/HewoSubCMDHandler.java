@@ -1,33 +1,37 @@
-package com.github.itsheroph.hewoutil.plugin.command;
+package com.github.itsheroph.hewoutil.commands;
 
 import com.github.itsheroph.hewoutil.messages.command.HewoCMDMessenger;
-import com.github.itsheroph.hewoutil.plugin.HewoPlugin;
 import org.bukkit.command.*;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class HewoCMDHandler implements CommandExecutor, TabExecutor {
+public class HewoSubCMDHandler implements CommandExecutor, TabExecutor {
 
-    private final Map<String, HewoCommand> commandMap;
-    private final HewoPlugin plugin;
+    private final String name;
     private final HewoCMDMessenger messenger;
+    private final Map<String, HewoSubCommand> commandMap = new HashMap<>();
 
-    public HewoCMDHandler(HewoPlugin plugin, HewoCMDMessenger messenger, HewoCommand... commands) {
+    protected HewoSubCMDHandler(HewoCMDMessenger messenger, String commandName,  HewoSubCommand... commands) {
 
-        this.commandMap = new HashMap<>();
-        this.plugin = plugin;
+        this.name = commandName;
         this.messenger = messenger;
 
-        this.addCommands(commands);
+        for(HewoSubCommand command : commands) {
+
+            this.addCommand(command);
+
+        }
 
     }
 
-    public HewoPlugin getPlugin() {
+    public String getName() {
 
-        return this.plugin;
+        return this.name;
 
     }
 
@@ -37,60 +41,38 @@ public class HewoCMDHandler implements CommandExecutor, TabExecutor {
 
     }
 
-    public Map<String, HewoCommand> getCommandMap() {
+    public Map<String, HewoSubCommand> getCommandMap() {
 
         return this.commandMap;
 
     }
 
-    public HewoCommand getCommand(String command) {
-
-        return this.getCommandMap().getOrDefault(command, null);
-
-    }
-
-    public List<HewoCommand> getCommands() {
-
-        return new ArrayList<>(this.getCommandMap().values());
-
-    }
-
-    public void addCommands(HewoCommand... commands) {
-
-        for (HewoCommand command : commands) {
-
-            this.addCommand(command);
-
-        }
-
-    }
-
-    public void addCommand(HewoCommand command) {
+    public void addCommand(HewoSubCommand command) {
 
         this.getCommandMap().put(command.getName(), command);
 
-        for(String alias : command.getAliases()) {
+    }
 
-            this.getCommandMap().put(alias, command);
+    public HewoSubCommand getCommand(String commandName) {
 
-        }
+        return this.getCommandMap().get(commandName);
 
     }
 
-    public boolean hasCommand(String command) {
+    public boolean hasCommand(String commandName) {
 
-        return this.getCommandMap().containsKey(command);
+        return this.getCommandMap().containsKey(commandName);
 
     }
 
     @Override
-    public boolean onCommand(CommandSender commandSender, Command command, String s, String[] arguments) {
+    public boolean onCommand(@NotNull CommandSender commandSender, @NotNull Command command, @NotNull String s, @NotNull String[] arguments) {
 
         String cmdName = arguments.length == 0 ? "help" : arguments[0].toLowerCase();
 
         if(this.hasCommand(cmdName)) {
 
-            HewoCommand hewoCommand = this.getCommand(cmdName);
+            HewoSubCommand hewoCommand = this.getCommand(cmdName);
 
             if(!hewoCommand.mayExecute(commandSender)) {
 
@@ -117,7 +99,7 @@ public class HewoCMDHandler implements CommandExecutor, TabExecutor {
     }
 
     @Override
-    public List<String> onTabComplete(CommandSender commandSender, Command command, String s, String[] arguments) {
+    public @Nullable List<String> onTabComplete(@NotNull CommandSender commandSender, @NotNull Command command, @NotNull String s, @NotNull String[] arguments) {
 
         if(arguments.length == 1) return new ArrayList<>(this.getCommandMap().keySet());
 
@@ -126,7 +108,7 @@ public class HewoCMDHandler implements CommandExecutor, TabExecutor {
             String cmdName = arguments[0].toLowerCase();
             if(this.hasCommand(cmdName)) {
 
-                HewoCommand hewoCommand = this.getCommand(cmdName);
+                HewoSubCommand hewoCommand = this.getCommand(cmdName);
 
                 return hewoCommand.getOptions(commandSender, arguments);
 
@@ -137,5 +119,4 @@ public class HewoCMDHandler implements CommandExecutor, TabExecutor {
         return List.of();
 
     }
-
 }
